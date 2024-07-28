@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #6A82FB, #FC5C7D);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .exam-container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            width: 300px;
+        }
+        .exam-container h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .exam-container button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007BFF;
+            border: none;
+            color: #fff;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .exam-container button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+    <!-- Add Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.0.0/firebase-database.js"></script> <!-- Include database SDK -->
+    
+</head>
+<body>
+    <div class="exam-container">
+        <h2 id="welcomeMessage"></h2>
+        <div id="questionContainer"></div>
+        <button id="submitExamButton" onclick="submitExam()" disabled>Submit Exam</button>
+    </div>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBBRzi40DS9hnrPvnIemI6SSur34z8nIHw",
+            authDomain: "careercrew-ca56d.firebaseapp.com",
+            databaseURL: "https://careercrew-ca56d-default-rtdb.firebaseio.com",
+            projectId: "careercrew-ca56d",
+            storageBucket: "careercrew-ca56d.appspot.com",
+            messagingSenderId: "756903487544",
+            appId: "1:756903487544:web:a2c885de740a7a65039ecd",
+            measurementId: "G-7LRBZ7CFXX"
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var welcomeMessage = localStorage.getItem('welcomeMessage');
+            if (welcomeMessage) {
+                document.getElementById('welcomeMessage').textContent = welcomeMessage;
+                fetchDreamRoleData();
+            } else {
+                alert('No welcome message found, please log in again.');
+                window.location.href = 'login.html';
+            }
+        });
+
+        function fetchDreamRoleData() {
+            firebase.auth().onAuthStateChanged((user) => {
+                if (user) {
+                    var userRef = firebase.database().ref('users/' + user.email.replace('.', ','));
+                    userRef.once('value', (snapshot) => {
+                        const userData = snapshot.val();
+                        if (userData && userData.dreamRole && userData.dreamCompany) {
+                            fetchHyperleapQuestions(userData.dreamRole, userData.dreamCompany);
+                        } else {
+                            alert('Dream role and company not found, please update your profile.');
+                        }
+                    });
+                } else {
+                    alert('User not logged in');
+                    window.location.href = 'login.html';
+                }
+            });
+        }
+
+        function fetchHyperleapQuestions(dreamRole, dreamCompany) {
+            const proxyUrl = 'http://localhost:3000/proxy';  // Replace with your proxy server URL
+        
+            const data = {
+                url: 'https://api.hyperleap.ai/prompts',
+                data: {
+                    promptId: '2dae56f3-2967-48fb-b7ca-efc454c8103b',
+                    promptVersionId: '73ad2dbf-8438-4146-9a15-216f0c6073c3',
+                    dreamRole: dreamRole,
+                    dreamCompany: dreamCompany
+                },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-hl-api-key': 'YzhlMGM1MzAyY2YwNDU3MDk2NmRiNDI0OWM5MTI4NTE='
+                }
+            };
+        
+            axios.post(proxyUrl, data)
+                .then(response => {
+                    displayQuestions(response.data.questions);
+                })
+                .catch(error => {
+                    console.error('Failed to fetch questions:', error);
+                });
+        }
+        
+        function displayQuestions(questions) {
+            const questionContainer = document.getElementById('questionContainer');
+            let questionHtml = '';
+            questions.forEach((question, index) => {
+                questionHtml += `
+                    <div>
+                        <p>${question.text}</p>
+                        <input type="text" id="userAnswer${index}" placeholder="Your answer">
+                    </div>
+                `;
+            });
+            questionContainer.innerHTML = questionHtml;
+            document.getElementById('submitExamButton').disabled = false;
+        }
+
+        function submitExam() {
+            firebase.auth().onAuthStateChanged((user) => {
+                if (user) {
+                    const answers = [];
+                    document.querySelectorAll('input[id^="userAnswer"]').forEach((input, index) => {
+                        answers.push({
+                            questionId: `question${index + 1}`,
+                            answer: input.value.trim()
+                        });
+                    });
+
+                    const userRef = firebase.database().ref('users/' + user.email.replace('.', ',') + '/examAnswers');
+                    userRef.set(answers)
+                        .then(() => {
+                            alert('Exam submitted successfully.');
+                        })
+                        .catch((error) => {
+                            alert('Error submitting exam: ' + error.message);
+                        });
+                } else {
+                    alert('User not logged in');
+                    window.location.href = 'login.html';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

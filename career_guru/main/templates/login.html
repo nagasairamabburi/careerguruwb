@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #e0f7fa; /* Light blue background */
+            margin: 0;
+            position: relative;
+            overflow: hidden;
+        }
+        .header {
+            width: 100%;
+            background-color: #007BFF;
+            padding: 20px 0;
+            text-align: center;
+            color: #fff;
+            font-size: 24px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            z-index: 1000;
+        }
+        .login-container {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            margin-top: 100px; /* To push it below the header */
+            z-index: 1001; /* Ensure it is above other elements */
+            position: relative; /* Position it above background elements */
+        }
+        .login-container h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .login-container input {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .login-container button {
+            width: 100%;
+            padding: 15px;
+            background-color: #007BFF;
+            border: none;
+            color: #fff;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .login-container button:hover {
+            background-color: #0056b3;
+        }
+        .login-container .forgot-password {
+            display: block;
+            margin-top: 15px;
+            color: #007BFF;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .login-container .forgot-password:hover {
+            text-decoration: underline;
+        }
+        .background-elements {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+        .background-elements .circle {
+            position: absolute;
+            border-radius: 50%;
+            background-color: rgba(0, 123, 255, 0.1);
+            animation: float 10s infinite;
+        }
+        .circle1 {
+            width: 200px;
+            height: 200px;
+            top: 20%;
+            left: 10%;
+        }
+        .circle2 {
+            width: 300px;
+            height: 300px;
+            bottom: 20%;
+            right: 10%;
+        }
+        .circle3 {
+            width: 150px;
+            height: 150px;
+            bottom: 30%;
+            left: 30%;
+        }
+        @keyframes float {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="header">Career Guru</div>
+    
+        
+    <div class="login-container">
+        <form method="post" action="{% url 'login' %}" id="ff">
+            {% csrf_token %}
+            <h2>Login</h2>
+            <input type="email" id="email" name="email" placeholder="Email" required>
+            <input type="password" id="password" name="password" placeholder="Password" required>
+            
+           
+        </form>
+        <button onclick="login()">Login</button>
+        <a href="#" class="forgot-password">Forgot Password?</a>
+        
+    </div>
+    <div class="background-elements">
+        <div class="circle circle1"></div>
+        <div class="circle circle2"></div>
+        <div class="circle circle3"></div>
+    </div>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
+    <script>
+        try{
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBBRzi40DS9hnrPvnIemI6SSur34z8nIHw",
+            authDomain: "careercrew-ca56d.firebaseapp.com",
+            databaseURL: "https://careercrew-ca56d-default-rtdb.firebaseio.com",
+            projectId: "careercrew-ca56d",
+            storageBucket: "careercrew-ca56d.appspot.com",
+            messagingSenderId: "756903487544",
+            appId: "1:756903487544:web:a2c885de740a7a65039ecd",
+            measurementId: "G-7LRBZ7CFXX"
+        };
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        function login() {
+            var email = document.getElementById('email').value;
+            var password = document.getElementById('password').value;
+
+            firebase.auth().signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    var user = userCredential.user;
+                    fetchUserDetails(user.email);
+                })
+                .catch((error) => {
+                    alert("Invalid Credentials");
+                });
+        }
+
+        function fetchUserDetails(email) {
+            var sanitizedEmail = email.replace('.', ',');
+            var userRef = firebase.database().ref('users/' + sanitizedEmail);
+            userRef.once('value').then((snapshot) => {
+                var userData = snapshot.val();
+                if (userData) {
+                    var welcomeMessage = `Welcome to the exam for ${userData.dreamRole} in ${userData.dreamCompany}`;
+                    localStorage.setItem('welcomeMessage', welcomeMessage);
+                    document.getElementById("ff").submit();
+                } else {
+                    alert('User data not found.');
+                }
+            }).catch((error) => {
+                alert('Failed to fetch user data: ' + error.message);
+            });
+        }
+    }catch(error){
+    alert(error);
+    }
+    </script>
+</body>
+</html>
