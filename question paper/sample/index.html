@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aptitude Test</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  
+  <div id="timer" class="timer">
+    00 : 00
+  </div>
+
+  <div class="question-container">
+    <h2>Question 1:</h2>
+    <p>What is the value of x in the equation 2x + 5 = 11?</p>
+    <div class="options">
+      <input type="radio" id="option-a" name="answer" value="A">
+      <label for="option-a">(A) 2</label>
+      <br>
+      <input type="radio" id="option-b" name="answer" value="B">
+      <label for="option-b">(B) 3</label>
+      <br>
+      <input type="radio" id="option-c" name="answer" value="C">
+      <label for="option-c">(C) 4</label>
+      <br>
+      <input type="radio" id="option-d" name="answer" value="D">
+      <label for="option-d">(D) 5</label>
+    </div>
+    <button id="submit-button">Submit</button>
+    <a href="http://127.0.0.1:5500/index.html"><button id="next-button">Next</button></a>
+    <div id="result"></div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@8.2.1/firebase-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@8.2.1/firebase-database.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
